@@ -1,12 +1,23 @@
+// app.js
 class Block {
-    constructor(xAxis, yAxis) {
+    constructor(xAxis, yAxis, color = '#ff6b6b') {
         this.bottomLeft = [xAxis, yAxis];
-        this.bottomRight = [xAxis + 100, yAxis];
-        this.topLeft = [xAxis, yAxis + 20];
-        this.topRight = [xAxis + 100, yAxis + 20];
+        this.bottomRight = [xAxis + blockWidth, yAxis];
+        this.topLeft = [xAxis, yAxis + blockHeight];
+        this.topRight = [xAxis + blockWidth, yAxis + blockHeight];
+        this.color = color;
     }
 }
 
+const boardWidth = 840;
+const boardHeight = 480;
+const blockWidth = 150;
+const blockHeight = 30;
+const ballDiameter = 20;
+const userStart = [345, 10];
+const ballStart = [395, 40];
+
+// DOM elements
 document.addEventListener('DOMContentLoaded', () => {
     const grid = document.querySelector('.grid');
     const scoreDisplay = document.querySelector('#score');
@@ -18,230 +29,181 @@ document.addEventListener('DOMContentLoaded', () => {
     const winMessageDisplay = document.querySelector('.win-message');
     const finalScoreDisplay = document.querySelector('#final-score');
 
-    const boardWidth = 560;
-    const boardHeight = 300;
-    const blockWidth = 100;
-    const blockHeight = 20;
-    const ballDiameter = 16;
-    const userStart = [230, 10];
-    const ballStart = [270, 30];
-
-    let currentPosition = userStart;
-    let ballCurrentPosition = ballStart;
+    let currentPosition = [...userStart];
+    let ballCurrentPosition = [...ballStart];
     let timerId;
-    let xDirection = 2;
-    let yDirection = 2;
+    let ballSpeed = 5;
+    let ballXSpeed = ballSpeed;
+    let ballYSpeed = ballSpeed;
     let score = 0;
     let lives = 3;
     let blocks = [];
+    let isGamePaused = false;
 
-    // Create Block
-    class Block {
-        constructor(xAxis, yAxis) {
-            this.bottomLeft = [xAxis, yAxis];
-            this.bottomRight = [xAxis + blockWidth, yAxis];
-            this.topLeft = [xAxis, yAxis + blockHeight];
-            this.topRight = [xAxis + blockWidth, yAxis + blockHeight];
-        }
-    }
+    const blockColors = ['#ff6b6b', '#ffd93d', '#6c5ce7', '#a8e6cf', '#ff8b94'];
 
-    // Add blocks
     function addBlocks() {
         for (let i = 0; i < 5; i++) {
             for (let j = 0; j < 5; j++) {
-                blocks.push(new Block(j * (blockWidth + 10) + 10, (i * (blockHeight + 10)) + 200));
+                const block = new Block(
+                    j * (blockWidth + 10) + 10,
+                    i * (blockHeight + 10) + 200,
+                    blockColors[i]
+                );
+                blocks.push(block);
             }
         }
     }
 
-    // Draw blocks
     function drawBlocks() {
-        for (let i = 0; i < blocks.length; i++) {
-            const block = document.createElement('div');
-            block.classList.add('block');
-            block.style.left = blocks[i].bottomLeft[0] + 'px';
-            block.style.bottom = blocks[i].bottomLeft[1] + 'px';
-            grid.appendChild(block);
-        }
+        blocks.forEach(block => {
+            const blockElement = document.createElement('div');
+            blockElement.classList.add('block');
+            blockElement.style.left = block.bottomLeft[0] + 'px';
+            blockElement.style.bottom = block.bottomLeft[1] + 'px';
+            blockElement.style.background = `linear-gradient(45deg, ${block.color}, ${lightenColor(block.color, 20)})`;
+            grid.appendChild(blockElement);
+        });
     }
 
-    // Add user
-    const user = document.createElement('div');
-    user.classList.add('user');
+    function lightenColor(color, percent) {
+        const num = parseInt(color.slice(1), 16);
+        const amt = Math.round(2.55 * percent);
+        const R = Math.min(255, (num >> 16) + amt);
+        const G = Math.min(255, ((num >> 8) & 0x00FF) + amt);
+        const B = Math.min(255, (num & 0x0000FF) + amt);
+        return `#${(R << 16 | G << 8 | B).toString(16).padStart(6, '0')}`;
+    }
 
-    // Draw user
     function drawUser() {
+        const user = document.querySelector('.user') || document.createElement('div');
+        user.classList.add('user');
         user.style.left = currentPosition[0] + 'px';
         user.style.bottom = currentPosition[1] + 'px';
+        if (!grid.contains(user)) grid.appendChild(user);
     }
 
-    // Draw ball
     function drawBall() {
+        const ball = document.querySelector('.ball') || document.createElement('div');
+        ball.classList.add('ball');
         ball.style.left = ballCurrentPosition[0] + 'px';
         ball.style.bottom = ballCurrentPosition[1] + 'px';
+        if (!grid.contains(ball)) grid.appendChild(ball);
     }
 
-    // Move user
-    function moveUser(e) {
-        switch(e.key) {
-            case 'ArrowLeft':
-                if (currentPosition[0] > 0) {
-                    currentPosition[0] -= 20;
-                    drawUser();
-                }
-                break;
-            case 'ArrowRight':
-                if (currentPosition[0] < boardWidth - blockWidth) {
-                    currentPosition[0] += 20;
-                    drawUser();
-                }
-                break;
-        }
-    }
-
-    // Add ball
-    const ball = document.createElement('div');
-    ball.classList.add('ball');
-
-    // Move ball
     function moveBall() {
-        ballCurrentPosition[0] += xDirection;
-        ballCurrentPosition[1] += yDirection;
-        drawBall();
-        checkForCollisions();
-    }
+        if (isGamePaused) return;
 
-    // Check for collisions
-    function checkForCollisions() {
-        // Check block collisions
-        for (let i = 0; i < blocks.length; i++) {
+        ballCurrentPosition[0] += ballXSpeed;
+        ballCurrentPosition[1] += ballYSpeed;
+
+        // Wall collisions
+        if (ballCurrentPosition[0] >= boardWidth - ballDiameter || ballCurrentPosition[0] <= 0) {
+            ballXSpeed *= -1;
+        }
+        if (ballCurrentPosition[1] >= boardHeight - ballDiameter) {
+            ballYSpeed *= -1;
+        }
+
+        // Paddle collision
+        if (
+            ballCurrentPosition[1] <= currentPosition[1] + blockHeight &&
+            ballCurrentPosition[0] > currentPosition[0] &&
+            ballCurrentPosition[0] < currentPosition[0] + blockWidth
+        ) {
+            ballYSpeed *= -1;
+        }
+
+        // Block collisions
+        blocks.forEach((block, index) => {
             if (
-                (ballCurrentPosition[0] > blocks[i].bottomLeft[0] &&
-                    ballCurrentPosition[0] < blocks[i].bottomRight[0]) &&
-                (ballCurrentPosition[1] + ballDiameter > blocks[i].bottomLeft[1] &&
-                    ballCurrentPosition[1] < blocks[i].topLeft[1])
+                ballCurrentPosition[0] + ballDiameter > block.bottomLeft[0] &&
+                ballCurrentPosition[0] < block.bottomRight[0] &&
+                ballCurrentPosition[1] + ballDiameter > block.bottomLeft[1] &&
+                ballCurrentPosition[1] < block.topLeft[1]
             ) {
                 const allBlocks = Array.from(document.querySelectorAll('.block'));
-                allBlocks[i].remove();
-                blocks.splice(i, 1);
-                changeDirection();
+                allBlocks[index].remove();
+                blocks.splice(index, 1);
+                ballYSpeed *= -1;
                 score += 10;
-                scoreDisplay.innerHTML = score;
+                scoreDisplay.textContent = score;
 
-                // Check for win
-                if (blocks.length === 0) {
-                    winGame();
-                }
+                if (blocks.length === 0) winGame();
             }
-        }
+        });
 
-        // Check wall collisions
-        if (
-            ballCurrentPosition[0] >= boardWidth - ballDiameter ||
-            ballCurrentPosition[1] >= boardHeight - ballDiameter ||
-            ballCurrentPosition[0] <= 0
-        ) {
-            changeDirection();
-        }
+        // Lose life
+        if (ballCurrentPosition[1] <= 0) handleLifeLost();
 
-        // Check user collisions
-        if (
-            (ballCurrentPosition[0] > currentPosition[0] &&
-                ballCurrentPosition[0] < currentPosition[0] + blockWidth) &&
-            (ballCurrentPosition[1] > currentPosition[1] &&
-                ballCurrentPosition[1] < currentPosition[1] + blockHeight)
-        ) {
-            changeDirection();
-        }
-
-        // Check for game over
-        if (ballCurrentPosition[1] <= 0) {
-            lives--;
-            livesDisplay.innerHTML = lives;
-            
-            if (lives <= 0) {
-                gameOver();
-            } else {
-                resetBall();
-            }
-        }
+        drawBall();
     }
 
-    function changeDirection() {
-        if (xDirection === 2 && yDirection === 2) {
-            yDirection = -2;
-            return;
-        }
-        if (xDirection === 2 && yDirection === -2) {
-            xDirection = -2;
-            return;
-        }
-        if (xDirection === -2 && yDirection === -2) {
-            yDirection = 2;
-            return;
-        }
-        if (xDirection === -2 && yDirection === 2) {
-            xDirection = 2;
-            return;
-        }
+    function handleLifeLost() {
+        lives--;
+        livesDisplay.textContent = lives;
+        if (lives === 0) gameOver();
+        else resetBall();
     }
 
     function resetBall() {
         ballCurrentPosition = [...ballStart];
-        xDirection = 2;
-        yDirection = 2;
+        ballSpeed = 5;
+        ballXSpeed = ballSpeed;
+        ballYSpeed = ballSpeed;
         drawBall();
-    }
-
-    function gameOver() {
-        clearInterval(timerId);
-        document.removeEventListener('keydown', moveUser);
-        gameOverDisplay.classList.remove('hidden');
-        finalScoreDisplay.innerHTML = score;
     }
 
     function winGame() {
         clearInterval(timerId);
-        document.removeEventListener('keydown', moveUser);
         winMessageDisplay.classList.remove('hidden');
+    }
+
+    function gameOver() {
+        clearInterval(timerId);
+        gameOverDisplay.classList.remove('hidden');
+        finalScoreDisplay.textContent = score;
     }
 
     function startGame() {
         // Reset game state
+        grid.innerHTML = '';
+        currentPosition = [...userStart];
+        ballCurrentPosition = [...ballStart];
         blocks = [];
         score = 0;
         lives = 3;
-        scoreDisplay.innerHTML = score;
-        livesDisplay.innerHTML = lives;
-        currentPosition = [...userStart];
-        ballCurrentPosition = [...ballStart];
-        xDirection = 2;
-        yDirection = 2;
+        ballSpeed = 5;
+        ballXSpeed = ballSpeed;
+        ballYSpeed = ballSpeed;
+        scoreDisplay.textContent = score;
+        livesDisplay.textContent = lives;
 
-        // Clear the grid
-        while (grid.firstChild) {
-            grid.removeChild(grid.firstChild);
-        }
-
-        // Hide messages
         gameOverDisplay.classList.add('hidden');
         winMessageDisplay.classList.add('hidden');
 
-        // Set up game
         addBlocks();
         drawBlocks();
-        grid.appendChild(user);
         drawUser();
-        grid.appendChild(ball);
         drawBall();
 
-        // Start game loop
         timerId = setInterval(moveBall, 20);
         document.addEventListener('keydown', moveUser);
     }
 
-    // Event listeners
+    function moveUser(e) {
+        switch (e.key) {
+            case 'ArrowLeft':
+                if (currentPosition[0] > 0) currentPosition[0] -= 20;
+                break;
+            case 'ArrowRight':
+                if (currentPosition[0] < boardWidth - blockWidth) currentPosition[0] += 20;
+                break;
+        }
+        drawUser();
+    }
+
     startButton.addEventListener('click', startGame);
     restartButton.addEventListener('click', startGame);
     playAgainButton.addEventListener('click', startGame);
-})
+});

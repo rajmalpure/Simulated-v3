@@ -7,22 +7,28 @@
     <link rel="stylesheet" href="styles.css">
 </head>
 <body>
-    <div class="game-container">
-        <div class="score-container">
-            <div>Score: <span id="score">0</span></div>
-            <button id="start-button">Start Game</button>
-            <div>Lives: <span id="lives">3</span></div>
+    <div class="game-wrapper">
+        <div class="game-title">
+            <h1>BREAKOUT ARCADE</h1>
+            <p class="subtitle">Break the blocks, Score high!</p>
         </div>
-        <div class="grid"></div>
-        <div class="game-over hidden">
-            <h2>Game Over!</h2>
-            <p>Final Score: <span id="final-score">0</span></p>
-            <button id="restart-button">Play Again</button>
-        </div>
-        <div class="win-message hidden">
-            <h2>Congratulations! 🎉</h2>
-            <p>You've cleared all blocks!</p>
-            <button id="play-again-button">Play Again</button>
+        <div class="game-container">
+            <div class="score-container">
+                <div class="score-item">Score: <span id="score">0</span></div>
+                <button id="start-button">Start Game</button>
+                <div class="score-item">Lives: <span id="lives">3</span></div>
+            </div>
+            <div class="grid"></div>
+            <div class="game-over hidden">
+                <h2>Game Over!</h2>
+                <p>Final Score: <span id="final-score">0</span></p>
+                <button id="restart-button">Play Again</button>
+            </div>
+            <div class="win-message hidden">
+                <h2>Congratulations! 🎉</h2>
+                <p>You've cleared all blocks!</p>
+                <button id="play-again-button">Play Again</button>
+            </div>
         </div>
     </div>
     <script src="app.js"></script>
