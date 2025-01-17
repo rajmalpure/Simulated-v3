@@ -1,0 +1,63 @@
+/* styles.css */
+.wrapper {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    font-family: Arial, sans-serif;
+}
+
+.game-stats {
+    display: flex;
+    gap: 20px;
+    margin: 20px 0;
+    align-items: center;
+}
+
+#start-button {
+    padding: 10px 20px;
+    font-size: 16px;
+    cursor: pointer;
+}
+
+.grid {
+    border: 1px solid black;
+    display: flex;
+    flex-wrap: wrap;
+    width: 540px;
+    height: 540px;
+}
+
+.grid div {
+    width: 60px;
+    height: 60px;
+    box-sizing: border-box;
+}
+
+.ending-block {
+    background-color: red;
+}
+
+.starting-block {
+    background-color: blue;
+}
+
+.log-left, .log-right {
+    background-color: #92400e;
+}
+
+.car-left, .car-right {
+    background-color: #525252;
+}
+
+.safe {
+    background-color: #a3a3a3;
+}
+
+.water {
+    background-color: #60a5fa;
+}
+
+.frog {
+    background-color: green;
+    border-radius: 50%;
+}
