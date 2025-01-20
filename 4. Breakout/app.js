@@ -203,6 +203,7 @@ document.addEventListener('DOMContentLoaded', () => {
         drawUser();
     }
 
+    
     startButton.addEventListener('click', startGame);
     restartButton.addEventListener('click', startGame);
     playAgainButton.addEventListener('click', startGame);
