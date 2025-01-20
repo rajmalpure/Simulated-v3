@@ -1,184 +1,153 @@
 document.addEventListener('DOMContentLoaded', () => {
-  let hasFlippedCard = false;
-  let lockBoard = false;
-  let firstCard, secondCard;
-  let moves = 0;
-  let matches = 0;
-  let gameTimer;
-  let gameTime = 0;
+    let hasFlippedCard = false;
+    let lockBoard = false;
+    let firstCard, secondCard;
+    let moves = 0;
+    let matches = 0;
+    let gameTime = 0;
+    let gameTimer;
+    let bestTime = localStorage.getItem('bestTime') || null;
 
-  const gameBoard = document.getElementById('game-board');
-  const movesDisplay = document.getElementById('moves');
-  const matchesDisplay = document.getElementById('matches');
-  const timeDisplay = document.getElementById('time');
-  const restartButton = document.getElementById('restart');
-  const playAgainButton = document.getElementById('play-again');
-  const winMessage = document.getElementById('win-message');
-  const finalMovesDisplay = document.getElementById('final-moves');
-  const finalTimeDisplay = document.getElementById('final-time');
+    const gameBoard = document.getElementById('game-board');
+    const movesDisplay = document.getElementById('moves');
+    const matchesDisplay = document.getElementById('matches');
+    const timeDisplay = document.getElementById('time');
+    const bestTimeDisplay = document.getElementById('best-time');
+    const restartButton = document.getElementById('restart');
+    const playAgainButton = document.getElementById('play-again');
+    const winMessage = document.getElementById('win-message');
+    const difficultySelect = document.getElementById('difficulty');
 
-  const cardImages = [
-      'assets/blank.png',
-      'assets/cheeseburger.png',
-      'assets/fries.png',
-      'assets/hotdog.png',
-      'assets/ice-cream.png',
-      'assets/milkshake.png',
-      'assets/pizza.png',
-      'assets/white.png'
-  ];
+    const cardImages = [
+        'assets/cheeseburger.png',
+        'assets/fries.png',
+        'assets/hotdog.png',
+        'assets/ice-cream.png',
+        'assets/milkshake.png',
+        'assets/pizza.png'
+    ];
 
-  const gameCards = [...cardImages, ...cardImages];
+    function initializeGame() {
+        moves = 0;
+        matches = 0;
+        gameTime = 0;
+        firstCard = null;
+        secondCard = null;
+        hasFlippedCard = false;
 
-  function initializeGame() {
-      
-      moves = 0;
-      matches = 0;
-      gameTime = 0;
-      hasFlippedCard = false;
-      lockBoard = false;
-      firstCard = null;
-      secondCard = null;
+        clearInterval(gameTimer);
+        startTimer();
 
-      if (gameTimer) clearInterval(gameTimer);
+        const pairs = difficultySelect.value === 'easy' ? 4 : difficultySelect.value === 'medium' ? 6 : 8;
+        const cards = [...cardImages.slice(0, pairs), ...cardImages.slice(0, pairs)];
+        createBoard(cards);
 
-      startTimer();
+        bestTimeDisplay.textContent = bestTime ? formatTime(bestTime) : '--:--';
+    }
 
-      updateDisplays();
-      
-      winMessage.classList.remove('show');
+    function startTimer() {
+        gameTimer = setInterval(() => {
+            gameTime++;
+            timeDisplay.textContent = formatTime(gameTime);
+        }, 1000);
+    }
 
-      createBoard();
-  }
+    function createBoard(cards) {
+        const shuffled = shuffle(cards);
+        gameBoard.innerHTML = '';
+        shuffled.forEach(image => {
+            const card = createCard(image);
+            gameBoard.appendChild(card);
+        });
+    }
 
-  function startTimer() {
-      gameTimer = setInterval(() => {
-          gameTime++;
-          updateTimeDisplay();
-      }, 1000);
-  }
+    function createCard(image) {
+        const card = document.createElement('div');
+        card.className = 'card';
+        card.dataset.image = image;
 
-  function updateTimeDisplay() {
-      const minutes = Math.floor(gameTime / 60);
-      const seconds = gameTime % 60;
-      timeDisplay.textContent = `${minutes}:${seconds.toString().padStart(2, '0')}`;
-  }
+        const front = document.createElement('div');
+        front.className = 'card-front';
 
-  function shuffle(array) {
-      for (let i = array.length - 1; i > 0; i--) {
-          const j = Math.floor(Math.random() * (i + 1));
-          [array[i], array[j]] = [array[j], array[i]];
-      }
-      return array;
-  }
+        const back = document.createElement('div');
+        back.className = 'card-back';
+        back.innerHTML = `<img src="${image}" alt="Card Image">`;
 
-  function createBoard() {
-      gameBoard.innerHTML = '';
-      const shuffledCards = shuffle([...gameCards]);
-      
-      shuffledCards.forEach((img, index) => {
-          const card = createCard(img, index);
-          gameBoard.appendChild(card);
-      });
-  }
+        card.appendChild(front);
+        card.appendChild(back);
 
-  function createCard(img, index) {
-      const card = document.createElement('div');
-      card.classList.add('card');
-      card.dataset.framework = img;
+        card.addEventListener('click', flipCard);
+        return card;
+    }
 
-      const cardFront = document.createElement('div');
-      cardFront.classList.add('card-front');
+    function flipCard() {
+        if (lockBoard || this === firstCard || this.classList.contains('matched')) return;
 
-      const cardBack = document.createElement('div');
-      cardBack.classList.add('card-back');
+        this.classList.add('flipped');
+        if (!hasFlippedCard) {
+            hasFlippedCard = true;
+            firstCard = this;
+            return;
+        }
 
-      const image = document.createElement('img');
-      image.src = img;
-      image.alt = `Card ${index + 1}`;
-      cardBack.appendChild(image);
+        secondCard = this;
+        checkMatch();
+    }
 
-      card.appendChild(cardFront);
-      card.appendChild(cardBack);
+    function checkMatch() {
+        const isMatch = firstCard.dataset.image === secondCard.dataset.image;
+        if (isMatch) {
+            matches++;
+            firstCard.classList.add('matched');
+            secondCard.classList.add('matched');
+            resetBoard();
+            if (matches === cardImages.length) {
+                endGame();
+            }
+        } else {
+            lockBoard = true;
+            setTimeout(() => {
+                firstCard.classList.remove('flipped');
+                secondCard.classList.remove('flipped');
+                resetBoard();
+            }, 1500);
+        }
+    }
 
-      card.addEventListener('click', flipCard);
-      return card;
-  }
+    function resetBoard() {
+        [hasFlippedCard, lockBoard] = [false, false];
+        [firstCard, secondCard] = [null, null];
+        moves++;
+        movesDisplay.textContent = moves;
+    }
 
-  function flipCard() {
-      if (lockBoard) return;
-      if (this === firstCard) return;
-      if (this.classList.contains('matched')) return;
+    function endGame() {
+        clearInterval(gameTimer);
+        const currentTime = gameTime;
+        if (!bestTime || currentTime < bestTime) {
+            bestTime = currentTime;
+            localStorage.setItem('bestTime', bestTime);
+        }
+        winMessage.classList.add('show');
+    }
 
-      this.classList.add('flipped');
-      moves++;
-      updateDisplays();
+    function formatTime(seconds) {
+        const mins = Math.floor(seconds / 60);
+        const secs = seconds % 60;
+        return `${mins}:${secs.toString().padStart(2, '0')}`;
+    }
 
-      if (!hasFlippedCard) {
-          hasFlippedCard = true;
-          firstCard = this;
-          return;
-      }
+    function shuffle(array) {
+        return array.sort(() => 0.5 - Math.random());
+    }
 
-      secondCard = this;
-      checkForMatch();
-  }
+    restartButton.addEventListener('click', initializeGame);
+    playAgainButton.addEventListener('click', () => {
+        winMessage.classList.remove('show');
+        initializeGame();
+    });
 
-  function checkForMatch() {
-      const isMatch = firstCard.dataset.framework === secondCard.dataset.framework;
+    difficultySelect.addEventListener('change', initializeGame);
 
-      if (isMatch) {
-          matches++;
-          updateDisplays();
-          handleMatch();
-          checkWin();
-      } else {
-          unflipCards();
-      }
-  }
-
-  function handleMatch() {
-      firstCard.classList.add('matched');
-      secondCard.classList.add('matched');
-      firstCard.removeEventListener('click', flipCard);
-      secondCard.removeEventListener('click', flipCard);
-      resetBoard();
-  }
-
-  function unflipCards() {
-      lockBoard = true;
-      setTimeout(() => {
-          firstCard.classList.remove('flipped');
-          secondCard.classList.remove('flipped');
-          resetBoard();
-      }, 1500);
-  }
-
-  function resetBoard() {
-      [hasFlippedCard, lockBoard] = [false, false];
-      [firstCard, secondCard] = [null, null];
-  }
-
-  function updateDisplays() {
-      movesDisplay.textContent = moves;
-      matchesDisplay.textContent = matches;
-  }
-
-  function checkWin() {
-      if (matches === cardImages.length) {
-          clearInterval(gameTimer);
-          setTimeout(showWinMessage, 500);
-      }
-  }
-
-  function showWinMessage() {
-      finalMovesDisplay.textContent = moves;
-      finalTimeDisplay.textContent = timeDisplay.textContent;
-      winMessage.classList.add('show');
-  }
-
-  restartButton.addEventListener('click', initializeGame);
-  playAgainButton.addEventListener('click', initializeGame);
-
-  initializeGame();
+    initializeGame();
 });
