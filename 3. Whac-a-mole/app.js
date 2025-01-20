@@ -12,7 +12,6 @@ let countdownId = null;
 let highScore = localStorage.getItem('whacAMoleHighScore') || 0;
 highScoreDisplay.textContent = highScore;
 
-// Create grid squares dynamically
 function createGrid() {
   grid.innerHTML = '';
   for (let i = 0; i < 9; i++) {
@@ -23,25 +22,31 @@ function createGrid() {
   }
 }
 
-// Randomly place the mole
 function randomMole() {
   document.querySelectorAll('.square').forEach(square => {
-    square.classList.remove('mole');
+    square.classList.remove('mole', 'bonus-mole');
   });
 
   const randomSquare = grid.children[Math.floor(Math.random() * 9)];
-  randomSquare.classList.add('mole');
+  const isBonus = Math.random() > 0.8; // 20% chance for a bonus mole
+
+  if (isBonus) {
+    randomSquare.classList.add('bonus-mole');
+    randomSquare.dataset.bonus = 'true';
+  } else {
+    randomSquare.classList.add('mole');
+    randomSquare.dataset.bonus = 'false';
+  }
   molePosition = randomSquare.id;
 }
 
-// Handle click event for registering hits
 function whackMole(event) {
   if (event.target.id === molePosition) {
-    score++;
+    const isBonus = event.target.dataset.bonus === 'true';
+    score += isBonus ? 5 : 1;
     scoreDisplay.textContent = score;
     molePosition = null;
-    
-    // Add hit animation
+
     event.target.style.transform = 'scale(0.9)';
     setTimeout(() => {
       event.target.style.transform = 'scale(1)';
@@ -49,7 +54,6 @@ function whackMole(event) {
   }
 }
 
-// Game timer
 function startCountdown() {
   countdownId = setInterval(() => {
     timeLeft--;
@@ -61,12 +65,17 @@ function startCountdown() {
   }, 1000);
 }
 
+function adjustSpeed() {
+  clearInterval(timerId);
+  const newInterval = Math.max(300, 800 - score * 10);
+  timerId = setInterval(randomMole, newInterval);
+}
+
 function endGame() {
   clearInterval(timerId);
   clearInterval(countdownId);
   grid.removeEventListener('click', whackMole);
-  
-  // Update high score
+
   if (score > highScore) {
     highScore = score;
     localStorage.setItem('whacAMoleHighScore', highScore);
@@ -79,23 +88,18 @@ function endGame() {
   startButton.disabled = false;
 }
 
-// Start the game
 function startGame() {
-  // Reset game state
   score = 0;
   timeLeft = 30;
   scoreDisplay.textContent = score;
   timeLeftDisplay.textContent = timeLeft;
-  
-  // Disable start button during game
+
   startButton.disabled = true;
-  
   createGrid();
   timerId = setInterval(randomMole, 800);
   startCountdown();
   grid.addEventListener('click', whackMole);
 }
 
-// Initialize the game
 createGrid();
 startButton.addEventListener('click', startGame);

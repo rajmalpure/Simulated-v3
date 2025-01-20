@@ -80,6 +80,11 @@ h1 {
   background-position: center;
 }
 
+.bonus-mole {
+  background-image: url('bonus-mole.jpg');
+  border: 3px solid gold;
+}
+
 .start-btn {
   font-size: 1.5rem;
   padding: 15px 40px;
