@@ -7,14 +7,49 @@
     <link rel="stylesheet" href="styles.css">
 </head>
 <body>
+    <div class="theme-selector">
+        <label for="theme">Select Theme:</label>
+        <select id="theme" onchange="changeTheme()">
+            <option value="classic">Classic</option>
+            <option value="futuristic">Futuristic</option>
+            <option value="fantasy">Fantasy</option>
+        </select>
+    </div>
+
     <h1>Connect Four</h1>
-    <div class="game-info">Current Player: <span id="current-player">Player 1</span></div>
+    
+    <div class="scoreboard">
+        <div class="player-score">
+            <span class="player">Player 1</span>
+            <span id="player1-score">0</span>
+        </div>
+        <div class="player-score">
+            <span class="player">Player 2</span>
+            <span id="player2-score">0</span>
+        </div>
+    </div>
+
+    <div class="game-info">
+        <div class="status">Current Player: <span id="current-player">Player 1</span></div>
+        <div id="message" class="message"></div>
+    </div>
+
     <div class="board">
         <div class="grid" id="board"></div>
     </div>
-    <div id="result"></div>
-    <button class="reset-button" onclick="resetGame()">Reset Game</button>
-    
+
+    <div class="controls">
+        <button class="control-button reset-button" onclick="resetGame()">Reset Game</button>
+        <button class="control-button new-game-button" onclick="newGame()">New Game</button>
+        <label class="sound-toggle">
+            <input type="checkbox" id="sound-toggle" checked>
+            Sound Effects
+        </label>
+    </div>
+
+    <audio id="drop-sound" src="data:audio/mpeg;base64,SUQzBAAAAAAAI1RTU0UAAAAPAAADTGF2ZjU4Ljc2LjEwMAAAAAAAAAAAAAAA//tQAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAWGluZwAAAA8AAAACAAADQABISEhISEhISEhISEhISEhISEhISEhISEhISEhISEhISEhISEhISEhISEhISEhISEhI//////////////////////////////////////////////////////////////////8AAAAATGF2YzU4LjEzAAAAAAAAAAAAAAAAJAYAAAAAAAAAA0CM1WxnAAAAAAAAAAAAAAAAAAAA" preload="auto"></audio>
+    <audio id="win-sound" src="data:audio/mpeg;base64,SUQzBAAAAAAAI1RTU0UAAAAPAAADTGF2ZjU4Ljc2LjEwMAAAAAAAAAAAAAAA//tQAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAWGluZwAAAA8AAAACAAADQABISEhISEhISEhISEhISEhISEhISEhISEhISEhISEhISEhISEhISEhISEhISEhISEhI//////////////////////////////////////////////////////////////////8AAAAATGF2YzU4LjEzAAAAAAAAAAAAAAAAJAYAAAAAAAAAA0CM1WxnAAAAAAAAAAAAAAAAAAAA" preload="auto"></audio>
+
     <script src="app.js"></script>
 </body>
 </html>

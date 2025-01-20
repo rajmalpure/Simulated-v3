@@ -5,6 +5,9 @@ class ConnectFour {
         this.board = Array(this.rows).fill().map(() => Array(this.cols).fill(null));
         this.currentPlayer = 1;
         this.gameActive = true;
+        this.scores = { 1: 0, 2: 0 };
+        this.soundEnabled = true;
+        this.winningCells = [];
         this.setupBoard();
         this.setupEventListeners();
     }
@@ -35,29 +38,47 @@ class ConnectFour {
                 this.makeMove(col);
             }
         });
+
+        document.getElementById('sound-toggle').addEventListener('change', (e) => {
+            this.soundEnabled = e.target.checked;
+        });
     }
 
     makeMove(col) {
         const row = this.getLowestEmptyRow(col);
-        if (row === -1) return;
+        if (row === -1) {
+            this.showMessage('Column is full! Try another column.');
+            return;
+        }
 
         this.board[row][col] = this.currentPlayer;
         this.updateCell(row, col);
+        
+        if (this.soundEnabled) {
+            document.getElementById('drop-sound').play();
+        }
 
         if (this.checkWin(row, col)) {
             this.gameActive = false;
-            document.getElementById('result').textContent = `Player ${this.currentPlayer} wins!`;
+            this.scores[this.currentPlayer]++;
+            this.updateScores();
+            this.highlightWinningCells();
+            if (this.soundEnabled) {
+                document.getElementById('win-sound').play();
+            }
+            this.showMessage(`Player ${this.currentPlayer} wins!`);
             return;
         }
 
         if (this.checkDraw()) {
             this.gameActive = false;
-            document.getElementById('result').textContent = "It's a draw!";
+            this.showMessage("It's a draw!");
             return;
         }
 
         this.currentPlayer = this.currentPlayer === 1 ? 2 : 1;
         document.getElementById('current-player').textContent = `Player ${this.currentPlayer}`;
+        this.showMessage('');
     }
 
     getLowestEmptyRow(col) {
@@ -82,43 +103,69 @@ class ConnectFour {
             [[1, -1], [-1, 1]]  // Diagonal 2
         ];
 
-        return directions.some(dir => {
-            const count = 1 +
-                this.countDirection(row, col, dir[0][0], dir[0][1]) +
-                this.countDirection(row, col, dir[1][0], dir[1][1]);
-            return count >= 4;
-        });
-    }
+        for (const dir of directions) {
+            const cells = [[row, col]];
+            let count = 1;
 
-    countDirection(row, col, rowDir, colDir) {
-        let count = 0;
-        let currentRow = row + rowDir;
-        let currentCol = col + colDir;
+            for (const [rowDir, colDir] of dir) {
+                let currentRow = row + rowDir;
+                let currentCol = col + colDir;
 
-        while (
-            currentRow >= 0 && currentRow < this.rows &&
-            currentCol >= 0 && currentCol < this.cols &&
-            this.board[currentRow][currentCol] === this.currentPlayer
-        ) {
-            count++;
-            currentRow += rowDir;
-            currentCol += colDir;
+                while (
+                    currentRow >= 0 && currentRow < this.rows &&
+                    currentCol >= 0 && currentCol < this.cols &&
+                    this.board[currentRow][currentCol] === this.currentPlayer
+                ) {
+                    cells.push([currentRow, currentCol]);
+                    count++;
+                    currentRow += rowDir;
+                    currentCol += colDir;
+                }
+            }
+
+            if (count >= 4) {
+                this.winningCells = cells;
+                return true;
+            }
         }
 
-        return count;
+        return false;
+    }
+
+    highlightWinningCells() {
+        this.winningCells.forEach(([row, col]) => {
+            const cell = document.querySelector(`[data-row="${row}"][data-col="${col}"]`);
+            cell.classList.add('winner');
+        });
     }
 
     checkDraw() {
         return this.board[0].every(cell => cell !== null);
     }
 
+    updateScores() {
+        document.getElementById('player1-score').textContent = this.scores[1];
+        document.getElementById('player2-score').textContent = this.scores[2];
+    }
+
+    showMessage(message) {
+        document.getElementById('message').textContent = message;
+    }
+
     reset() {
         this.board = Array(this.rows).fill().map(() => Array(this.cols).fill(null));
         this.currentPlayer = 1;
         this.gameActive = true;
+        this.winningCells = [];
         this.setupBoard();
         document.getElementById('current-player').textContent = 'Player 1';
-        document.getElementById('result').textContent = '';
+        this.showMessage('');
+    }
+
+    newGame() {
+        this.scores = { 1: 0, 2: 0 };
+        this.updateScores();
+        this.reset();
     }
 }
 
@@ -126,4 +173,13 @@ let game = new ConnectFour();
 
 function resetGame() {
     game.reset();
+}
+
+function newGame() {
+    game.newGame();
+}
+
+function changeTheme() {
+    const theme = document.getElementById('theme').value;
+    document.body.className = theme;
 }
