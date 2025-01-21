@@ -8,6 +8,7 @@
 </head>
 <body>
     <div class="game-container">
+        <h1 class="game-title">🚀 Space Invaders</h1>
         <div class="game-info">
             <span>Score: <span id="score">0</span></span>
             <span>High Score: <span id="high-score">0</span></span>
@@ -16,12 +17,12 @@
         </div>
         <div id="grid"></div>
         <div class="controls">
-            <p>Use ← → to move, ↑ to shoot</p>
+            <p>Use <span class="key">←</span> <span class="key">→</span> to move, <span class="key">↑</span> to shoot</p>
         </div>
     </div>
-    <audio id="shoot-sound" src="shoot.mp3"></audio>
-    <audio id="explosion-sound" src="explosion.mp3"></audio>
-    <audio id="background-music" src="background.mp3" loop></audio>
+    <audio id="shoot-sound" src="assets/shooting.mp3"></audio>
+    <audio id="explosion-sound" src="assets/space invaders_assets_enemy-hit.mp3"></audio>
+    <audio id="background-music" src="assets/game-over.mp3" loop autoplay></audio>
     <script src="app.js"></script>
 </body>
 </html>

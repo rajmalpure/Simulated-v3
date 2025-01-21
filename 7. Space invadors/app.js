@@ -66,8 +66,8 @@ document.addEventListener('DOMContentLoaded', () => {
 
         function moveLaser() {
             if (laserIndex >= width) {
-                cells[laserIndex].classList.remove('laser');
-                laserIndex -= width;
+                cells[laserIndex].classList.remove('laser'); // Remove laser from the current position
+                laserIndex -= width; // Move laser up by one row
 
                 if (cells[laserIndex].classList.contains('invader')) {
                     clearInterval(laserId);
@@ -90,9 +90,11 @@ document.addEventListener('DOMContentLoaded', () => {
                         drawInvaders();
                     }
                 } else {
-                    cells[laserIndex].classList.add('laser');
+                    cells[laserIndex].classList.add('laser'); // Add laser to the new position
                 }
             } else {
+                // Clear the laser when it reaches the top of the grid
+                cells[laserIndex].classList.remove('laser');
                 clearInterval(laserId);
             }
         }
