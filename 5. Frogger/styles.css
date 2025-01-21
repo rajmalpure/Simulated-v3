@@ -5,13 +5,15 @@ body {
     justify-content: center;
     min-height: 100vh;
     margin: 0;
-    background-color: #c1b6e0;
+    background: linear-gradient(135deg, #bc8731,#4fda86, #ba4639);
     font-family: Arial, sans-serif;
 }
 
 .game-container {
-    background-color: #584b75;
-    padding: 8rem;
+    background-color: #5a3264;
+    padding: 120px;
+    height: 600px;
+    width: 400px;
     border-radius: 15px;
     box-shadow: 0 0 20px rgba(0,0,0,0.3);
 }
